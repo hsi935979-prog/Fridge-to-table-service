@@ -126,33 +126,75 @@ export default function Home() {
 
   const expiringSoon = ingredients.filter(i => {
     const days = getDaysUntilExpiration(i.expirationDate);
-    return days >= 0 && days <= 3;
+    return days >= 0 && days <= 7;
   });
 
+  const addSampleIngredients = () => {
+    const sampleIngredients: Ingredient[] = [
+      {
+        id: Date.now().toString() + '-1',
+        name: '계란',
+        category: 'dairy',
+        expirationDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        quantity: '10개'
+      },
+      {
+        id: Date.now().toString() + '-2',
+        name: '우유',
+        category: 'dairy',
+        expirationDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        quantity: '1L'
+      },
+      {
+        id: Date.now().toString() + '-3',
+        name: '김치',
+        category: 'vegetable',
+        expirationDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        quantity: '500g'
+      },
+      {
+        id: Date.now().toString() + '-4',
+        name: '양파',
+        category: 'vegetable',
+        expirationDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        quantity: '3개'
+      },
+      {
+        id: Date.now().toString() + '-5',
+        name: '대파',
+        category: 'vegetable',
+        expirationDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        quantity: '2대'
+      }
+    ];
+    setIngredients(sampleIngredients);
+  };
+
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
+    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gray-900' : 'bg-gradient-to-br from-blue-50 via-white to-purple-50'}`}>
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <header className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
-              Fridge-to-Table
+            <h1 className="text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+              🧊 Fridge-to-Table
             </h1>
-            <p className="text-gray-600 dark:text-gray-300">
+            <p className="text-lg text-gray-700 dark:text-gray-200 font-medium">
               냉장고 속 식재료를 효율적으로 관리하고 맛있는 요리를 만들어보세요
             </p>
           </div>
           <div className="flex gap-3">
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className="p-3 rounded-full bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-shadow"
+              className="p-3 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700"
             >
               {darkMode ? '☀️' : '🌙'}
             </button>
             <button
               onClick={() => setShowPremium(true)}
-              className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full font-semibold hover:shadow-lg transition-shadow"
+              className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold hover:shadow-xl transition-all flex items-center gap-2 border border-purple-400"
             >
-              Pro 업그레이드
+              <span>⭐</span>
+              <span>Pro 업그레이드</span>
             </button>
           </div>
         </header>
@@ -190,8 +232,14 @@ export default function Home() {
               {ingredients.length === 0 ? (
                 <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                   <p className="text-4xl mb-4">🧊</p>
-                  <p>냉장고가 비어있어요</p>
-                  <p className="text-sm mt-2">식재료를 추가해주세요</p>
+                  <p className="text-lg font-medium mb-2">냉장고가 비어있어요</p>
+                  <p className="text-sm mb-4">식재료를 추가해주세요</p>
+                  <button
+                    onClick={addSampleIngredients}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+                  >
+                    샘플 식재료 채우기
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-3">
