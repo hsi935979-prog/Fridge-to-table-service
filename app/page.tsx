@@ -48,10 +48,31 @@ export default function Home() {
   };
 
   const getExpirationStatus = (days: number) => {
-    if (days < 0) return { color: 'bg-red-500', text: '만료됨' };
-    if (days <= 3) return { color: 'bg-orange-500', text: `${days}일 남음` };
-    if (days <= 7) return { color: 'bg-yellow-500', text: `${days}일 남음` };
-    return { color: 'bg-green-500', text: `${days}일 남음` };
+    if (days < 0) return { 
+      color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 border-red-300 dark:border-red-700',
+      badge: 'bg-red-500',
+      text: `D+${Math.abs(days)}` 
+    };
+    if (days === 0) return { 
+      color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 border-orange-300 dark:border-orange-700',
+      badge: 'bg-orange-500',
+      text: 'D-Day' 
+    };
+    if (days <= 3) return { 
+      color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 border-orange-300 dark:border-orange-700',
+      badge: 'bg-orange-500',
+      text: `D-${days}` 
+    };
+    if (days <= 7) return { 
+      color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700',
+      badge: 'bg-yellow-500',
+      text: `D-${days}` 
+    };
+    return { 
+      color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-300 dark:border-green-700',
+      badge: 'bg-green-500',
+      text: `D-${days}` 
+    };
   };
 
   const addIngredient = () => {
@@ -252,7 +273,7 @@ export default function Home() {
                         className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl hover:shadow-md transition-shadow"
                       >
                         <div className="flex items-center gap-4">
-                          <div className={`w-3 h-3 rounded-full ${status.color}`} />
+                          <div className={`w-4 h-4 rounded-full ${status.badge}`} />
                           <div>
                             <h3 className="font-semibold text-gray-800 dark:text-white">
                               {ingredient.name}
@@ -263,11 +284,7 @@ export default function Home() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className={`text-sm font-medium ${
-                            days < 0 ? 'text-red-600 dark:text-red-400' :
-                            days <= 3 ? 'text-orange-600 dark:text-orange-400' :
-                            'text-green-600 dark:text-green-400'
-                          }`}>
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold border ${status.color}`}>
                             {status.text}
                           </span>
                           <button
@@ -498,67 +515,134 @@ export default function Home() {
 
         {showPremium && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
-                  Pro 업그레이드
-                </h3>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-4xl w-full p-8 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-8">
+                <div>
+                  <h3 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    ⭐ Pro 업그레이드
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mt-1">
+                    더 스마트한 냉장고 관리를 경험하세요
+                  </p>
+                </div>
                 <button
                   onClick={() => setShowPremium(false)}
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl"
+                  className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                 >
-                  ✕
+                  <span className="text-xl text-gray-500 dark:text-gray-400">✕</span>
                 </button>
               </div>
 
-              <div className="space-y-6">
-                <div className="p-6 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                  <h4 className="text-xl font-bold text-gray-800 dark:text-white mb-4">
-                    무료 버전
-                  </h4>
-                  <ul className="space-y-2 text-gray-600 dark:text-gray-300">
-                    <li>✅ 식재료 관리</li>
-                    <li>✅ 유통기한 알림</li>
-                    <li>✅ 기본 요리 추천</li>
-                    <li>❌ 광고 표시</li>
-                    <li>❌ AI 식단 생성</li>
-                    <li>❌ 영수증 스캔</li>
-                  </ul>
-                </div>
-
-                <div className="p-6 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl text-white">
-                  <div className="flex justify-between items-center mb-4">
-                    <h4 className="text-2xl font-bold">Pro 버전</h4>
-                    <span className="text-3xl font-bold">₩9,900/월</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {/* Free Plan */}
+                <div className="p-6 bg-gray-50 dark:bg-gray-700 rounded-2xl border-2 border-gray-200 dark:border-gray-600">
+                  <div className="mb-4">
+                    <h4 className="text-2xl font-bold text-gray-800 dark:text-white mb-1">
+                      무료 버전
+                    </h4>
+                    <p className="text-gray-500 dark:text-gray-400">기본 기능 제공</p>
                   </div>
-                  <ul className="space-y-2 mb-6">
-                    <li>✅ 모든 무료 기능</li>
-                    <li>✅ 광고 제거</li>
-                    <li>✅ AI 맞춤 주간 식단표</li>
-                    <li>✅ 스마트 영수증 스캔</li>
-                    <li>✅ 고급 요리 추천</li>
-                    <li>✅ 영양소 분석</li>
+                  <ul className="space-y-3 mb-6">
+                    <li className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                      <span className="text-green-500">✓</span>
+                      <span>식재료 관리</span>
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                      <span className="text-green-500">✓</span>
+                      <span>유통기한 알림</span>
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                      <span className="text-green-500">✓</span>
+                      <span>기본 요리 추천</span>
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-400 dark:text-gray-500">
+                      <span className="text-red-400">✕</span>
+                      <span>광고 제거</span>
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-400 dark:text-gray-500">
+                      <span className="text-red-400">✕</span>
+                      <span>AI 식단 생성</span>
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-400 dark:text-gray-500">
+                      <span className="text-red-400">✕</span>
+                      <span>영수증 스캔</span>
+                    </li>
                   </ul>
-                  <button className="w-full py-3 bg-white text-purple-600 font-bold rounded-xl hover:bg-gray-100 transition-colors">
-                    지금 시작하기
+                  <button className="w-full py-3 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
+                    현재 사용 중
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-                    <h5 className="font-semibold text-gray-800 dark:text-white mb-2">
-                      AI 식단 생성
-                    </h5>
+                {/* Pro Plan */}
+                <div className="p-6 bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl text-white relative overflow-hidden">
+                  <div className="absolute top-4 right-4 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full">
+                    인기
+                  </div>
+                  <div className="mb-4">
+                    <h4 className="text-2xl font-bold mb-1">Pro 버전</h4>
+                    <p className="text-purple-100">모든 프리미엄 기능</p>
+                  </div>
+                  <div className="mb-6">
+                    <span className="text-4xl font-bold">₩9,900</span>
+                    <span className="text-purple-200">/월</span>
+                  </div>
+                  <ul className="space-y-3 mb-6">
+                    <li className="flex items-center gap-2">
+                      <span className="text-yellow-300">✓</span>
+                      <span>모든 무료 기능</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-yellow-300">✓</span>
+                      <span>광고 완전 제거</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-yellow-300">✓</span>
+                      <span>AI 맞춤 주간 식단표</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-yellow-300">✓</span>
+                      <span>스마트 영수증 스캔</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-yellow-300">✓</span>
+                      <span>고급 요리 추천</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-yellow-300">✓</span>
+                      <span>영양소 분석</span>
+                    </li>
+                  </ul>
+                  <button className="w-full py-3 bg-white text-purple-600 rounded-xl font-bold hover:bg-gray-100 transition-colors shadow-lg">
+                    Pro로 업그레이드
+                  </button>
+                </div>
+              </div>
+
+              {/* Feature Highlights */}
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-600 rounded-2xl p-6">
+                <h4 className="text-lg font-bold text-gray-800 dark:text-white mb-4">
+                  프리미엄 혜택 미리보기
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
+                    <div className="text-3xl mb-2">🤖</div>
+                    <h5 className="font-semibold text-gray-800 dark:text-white mb-1">AI 식단 생성</h5>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       냉장고 재료로 맞춤형 주간 식단을 AI가 자동 생성
                     </p>
                   </div>
-                  <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
-                    <h5 className="font-semibold text-gray-800 dark:text-white mb-2">
-                      영수증 스캔
-                    </h5>
+                  <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
+                    <div className="text-3xl mb-2">📸</div>
+                    <h5 className="font-semibold text-gray-800 dark:text-white mb-1">영수증 스캔</h5>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       영수증 사진을 찍으면 식재료 자동 등록
+                    </p>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
+                    <div className="text-3xl mb-2">📊</div>
+                    <h5 className="font-semibold text-gray-800 dark:text-white mb-1">영양소 분석</h5>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      각 요리의 영양소를 자동으로 분석하여 제공
                     </p>
                   </div>
                 </div>
