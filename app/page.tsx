@@ -16,6 +16,17 @@ interface Recipe {
   ingredients: string[];
   time: string;
   difficulty: string;
+  isCustom?: boolean;
+}
+
+interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  unlocked: boolean;
+  progress: number;
+  target: number;
 }
 
 export default function Home() {
@@ -30,6 +41,44 @@ export default function Home() {
     quantity: ''
   });
   const [showPremium, setShowPremium] = useState(false);
+  const [achievements, setAchievements] = useState<Achievement[]>([
+    {
+      id: 'first-rescue',
+      name: '첫 구출',
+      description: '유통기한 임박 재료로 첫 요리 완료',
+      icon: '🏆',
+      unlocked: false,
+      progress: 0,
+      target: 1
+    },
+    {
+      id: 'rescue-master',
+      name: '구출 마스터',
+      description: '유통기한 임박 재료로 5번 요리 완료',
+      icon: '🌟',
+      unlocked: false,
+      progress: 0,
+      target: 5
+    },
+    {
+      id: 'zero-waste',
+      name: '제로 웨이스트',
+      description: '모든 재료를 사용하여 요리 완료',
+      icon: '♻️',
+      unlocked: false,
+      progress: 0,
+      target: 1
+    }
+  ]);
+  const [customRecipes, setCustomRecipes] = useState<Recipe[]>([]);
+  const [showCustomRecipeModal, setShowCustomRecipeModal] = useState(false);
+  const [newCustomRecipe, setNewCustomRecipe] = useState({
+    name: '',
+    ingredients: '',
+    time: '',
+    difficulty: '쉬움'
+  });
+  const [activeTab, setActiveTab] = useState<'recipes' | 'custom'>('recipes');
 
   useEffect(() => {
     const saved = localStorage.getItem('ingredients');
@@ -48,6 +97,22 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(darkMode));
   }, [darkMode]);
+
+  useEffect(() => {
+    const savedAchievements = localStorage.getItem('achievements');
+    if (savedAchievements) setAchievements(JSON.parse(savedAchievements));
+    
+    const savedCustomRecipes = localStorage.getItem('customRecipes');
+    if (savedCustomRecipes) setCustomRecipes(JSON.parse(savedCustomRecipes));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('achievements', JSON.stringify(achievements));
+  }, [achievements]);
+
+  useEffect(() => {
+    localStorage.setItem('customRecipes', JSON.stringify(customRecipes));
+  }, [customRecipes]);
 
   const getDaysUntilExpiration = (date: string) => {
     const today = new Date();
@@ -110,6 +175,7 @@ export default function Home() {
   const cookRecipe = (recipe: Recipe) => {
     const ingredientNames = ingredients.map(i => i.name.toLowerCase());
     const ingredientsToRemove: string[] = [];
+    let rescuedIngredients = 0;
     
     recipe.ingredients.forEach(recipeIng => {
       const match = ingredientNames.find(name => 
@@ -117,6 +183,11 @@ export default function Home() {
       );
       if (match) {
         ingredientsToRemove.push(match);
+        const ingredient = ingredients.find(i => i.name.toLowerCase() === match);
+        if (ingredient) {
+          const days = getDaysUntilExpiration(ingredient.expirationDate);
+          if (days <= 7) rescuedIngredients++;
+        }
       }
     });
     
@@ -125,7 +196,55 @@ export default function Home() {
         !ingredientsToRemove.includes(ing.name.toLowerCase())
       );
       setIngredients(updatedIngredients);
+      
+      // Update achievements
+      if (rescuedIngredients > 0) {
+        setAchievements(prev => prev.map(ach => {
+          if (ach.id === 'first-rescue' && !ach.unlocked) {
+            return { ...ach, unlocked: true, progress: 1 };
+          }
+          if (ach.id === 'rescue-master') {
+            const newProgress = Math.min(ach.progress + 1, ach.target);
+            return { ...ach, progress: newProgress, unlocked: newProgress >= ach.target };
+          }
+          return ach;
+        }));
+      }
+      
+      if (updatedIngredients.length === 0) {
+        setAchievements(prev => prev.map(ach => {
+          if (ach.id === 'zero-waste' && !ach.unlocked) {
+            return { ...ach, unlocked: true, progress: 1 };
+          }
+          return ach;
+        }));
+      }
     }
+  };
+
+  const addCustomRecipe = () => {
+    if (!newCustomRecipe.name || !newCustomRecipe.ingredients) return;
+    
+    const recipe: Recipe = {
+      id: Date.now().toString(),
+      name: newCustomRecipe.name,
+      ingredients: newCustomRecipe.ingredients.split(',').map(i => i.trim()),
+      time: newCustomRecipe.time,
+      difficulty: newCustomRecipe.difficulty,
+      isCustom: true
+    };
+    
+    setCustomRecipes([...customRecipes, recipe]);
+    setNewCustomRecipe({ name: '', ingredients: '', time: '', difficulty: '쉬움' });
+    setShowCustomRecipeModal(false);
+  };
+
+  const deleteCustomRecipe = (id: string) => {
+    setCustomRecipes(customRecipes.filter(r => r.id !== id));
+  };
+
+  const getAllRecipes = (): Recipe[] => {
+    return [...getRecommendedRecipes(), ...customRecipes];
   };
 
   const getRecommendedRecipes = (): Recipe[] => {
@@ -265,6 +384,36 @@ export default function Home() {
           </div>
         )}
 
+        {/* Achievement Stats */}
+        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-2xl p-4 mb-6 border border-yellow-200 dark:border-yellow-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🏆</span>
+              <div>
+                <h3 className="font-bold text-gray-800 dark:text-white">냉장고 구출 뱃지</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {achievements.filter(a => a.unlocked).length} / {achievements.length} 달성
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              {achievements.map(ach => (
+                <div
+                  key={ach.id}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${
+                    ach.unlocked
+                      ? 'bg-yellow-400 text-yellow-900'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
+                  }`}
+                  title={ach.name}
+                >
+                  {ach.icon}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
@@ -340,18 +489,44 @@ export default function Home() {
 
           <div>
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">
-                추천 요리
-              </h2>
-              {ingredients.length === 0 ? (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <p className="text-3xl mb-2">🍽️</p>
-                  <p className="text-sm">식재료를 추가하면</p>
-                  <p className="text-sm">추천 요리를 보여드려요</p>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white">
+                  요리 추천
+                </h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setActiveTab('recipes')}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                      activeTab === 'recipes'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                    }`}
+                  >
+                    추천
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('custom')}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                      activeTab === 'custom'
+                        ? 'bg-purple-500 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                    }`}
+                  >
+                    나만의 레시피
+                  </button>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {getRecommendedRecipes().map(recipe => (
+              </div>
+              {activeTab === 'recipes' ? (
+                <>
+                  {ingredients.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      <p className="text-3xl mb-2">🍽️</p>
+                      <p className="text-sm">식재료를 추가하면</p>
+                      <p className="text-sm">추천 요리를 보여드려요</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {getRecommendedRecipes().map(recipe => (
                     <div
                       key={recipe.id}
                       className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-600 rounded-xl hover:shadow-md transition-shadow"
@@ -380,14 +555,78 @@ export default function Home() {
                       >
                         🍳 요리하기
                       </button>
-                    </div>
-                  ))}
-                  {getRecommendedRecipes().length === 0 && (
-                    <p className="text-center text-gray-500 dark:text-gray-400 py-4">
-                      현재 재료로 만들 수 있는 요리가 없어요
-                    </p>
+                      </div>
+                    ))}
+                    {getRecommendedRecipes().length === 0 && (
+                      <p className="text-center text-gray-500 dark:text-gray-400 py-4">
+                        현재 재료로 만들 수 있는 요리가 없어요
+                      </p>
+                    )}
+                  </div>
                   )}
-                </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-between items-center mb-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {customRecipes.length}개의 나만의 레시피
+                    </p>
+                    <button
+                      onClick={() => setShowCustomRecipeModal(true)}
+                      className="px-3 py-1 bg-purple-500 text-white rounded-lg text-sm font-medium hover:bg-purple-600 transition-colors"
+                    >
+                      + 레시피 추가
+                    </button>
+                  </div>
+                  {customRecipes.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      <p className="text-3xl mb-2">📝</p>
+                      <p className="text-sm mb-2">나만의 레시피를 추가해보세요</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {customRecipes.map(recipe => (
+                        <div
+                          key={recipe.id}
+                          className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-700 dark:to-gray-600 rounded-xl hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <h3 className="font-semibold text-gray-800 dark:text-white">
+                              {recipe.name}
+                            </h3>
+                            <button
+                              onClick={() => deleteCustomRecipe(recipe.id)}
+                              className="text-gray-400 hover:text-red-500 transition-colors"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                          <div className="flex gap-2 text-sm text-gray-600 dark:text-gray-300 mb-2">
+                            <span>⏱️ {recipe.time}</span>
+                            <span>•</span>
+                            <span>📊 {recipe.difficulty}</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {recipe.ingredients.map((ing, idx) => (
+                              <span
+                                key={idx}
+                                className="text-xs px-2 py-1 bg-white dark:bg-gray-800 rounded-full text-gray-600 dark:text-gray-300"
+                              >
+                                {ing}
+                              </span>
+                            ))}
+                          </div>
+                          <button
+                            onClick={() => cookRecipe(recipe)}
+                            className="mt-3 w-full py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-semibold hover:shadow-md transition-all text-sm"
+                          >
+                            🍳 요리하기
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -682,6 +921,83 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Custom Recipe Modal */}
+        {showCustomRecipeModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">
+                나만의 레시피 추가
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    레시피 이름
+                  </label>
+                  <input
+                    type="text"
+                    value={newCustomRecipe.name}
+                    onChange={(e) => setNewCustomRecipe({...newCustomRecipe, name: e.target.value})}
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white"
+                    placeholder="예: 나만의 볶음밥"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    재료 (쉼표로 구분)
+                  </label>
+                  <input
+                    type="text"
+                    value={newCustomRecipe.ingredients}
+                    onChange={(e) => setNewCustomRecipe({...newCustomRecipe, ingredients: e.target.value})}
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white"
+                    placeholder="예: 밥, 계란, 양파, 간장"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    조리 시간
+                  </label>
+                  <input
+                    type="text"
+                    value={newCustomRecipe.time}
+                    onChange={(e) => setNewCustomRecipe({...newCustomRecipe, time: e.target.value})}
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white"
+                    placeholder="예: 20분"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    난이도
+                  </label>
+                  <select
+                    value={newCustomRecipe.difficulty}
+                    onChange={(e) => setNewCustomRecipe({...newCustomRecipe, difficulty: e.target.value})}
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="쉬움">쉬움</option>
+                    <option value="보통">보통</option>
+                    <option value="어려움">어려움</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowCustomRecipeModal(false)}
+                  className="flex-1 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={addCustomRecipe}
+                  className="flex-1 py-3 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition-colors"
+                >
+                  추가
+                </button>
               </div>
             </div>
           </div>
