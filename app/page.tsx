@@ -34,11 +34,20 @@ export default function Home() {
   useEffect(() => {
     const saved = localStorage.getItem('ingredients');
     if (saved) setIngredients(JSON.parse(saved));
+    
+    const savedDarkMode = localStorage.getItem('darkMode');
+    if (savedDarkMode !== null) {
+      setDarkMode(JSON.parse(savedDarkMode));
+    }
   }, []);
 
   useEffect(() => {
     localStorage.setItem('ingredients', JSON.stringify(ingredients));
   }, [ingredients]);
+
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(darkMode));
+  }, [darkMode]);
 
   const getDaysUntilExpiration = (date: string) => {
     const today = new Date();
@@ -96,6 +105,27 @@ export default function Home() {
 
   const deleteIngredient = (id: string) => {
     setIngredients(ingredients.filter(i => i.id !== id));
+  };
+
+  const cookRecipe = (recipe: Recipe) => {
+    const ingredientNames = ingredients.map(i => i.name.toLowerCase());
+    const ingredientsToRemove: string[] = [];
+    
+    recipe.ingredients.forEach(recipeIng => {
+      const match = ingredientNames.find(name => 
+        name.includes(recipeIng) || recipeIng.includes(name)
+      );
+      if (match) {
+        ingredientsToRemove.push(match);
+      }
+    });
+    
+    if (ingredientsToRemove.length > 0) {
+      const updatedIngredients = ingredients.filter(ing => 
+        !ingredientsToRemove.includes(ing.name.toLowerCase())
+      );
+      setIngredients(updatedIngredients);
+    }
   };
 
   const getRecommendedRecipes = (): Recipe[] => {
@@ -324,7 +354,7 @@ export default function Home() {
                   {getRecommendedRecipes().map(recipe => (
                     <div
                       key={recipe.id}
-                      className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-600 rounded-xl hover:shadow-md transition-shadow cursor-pointer"
+                      className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-600 rounded-xl hover:shadow-md transition-shadow"
                     >
                       <h3 className="font-semibold text-gray-800 dark:text-white mb-2">
                         {recipe.name}
@@ -344,6 +374,12 @@ export default function Home() {
                           </span>
                         ))}
                       </div>
+                      <button
+                        onClick={() => cookRecipe(recipe)}
+                        className="mt-3 w-full py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-semibold hover:shadow-md transition-all text-sm"
+                      >
+                        🍳 요리하기
+                      </button>
                     </div>
                   ))}
                   {getRecommendedRecipes().length === 0 && (
